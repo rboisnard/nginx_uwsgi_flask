@@ -28,13 +28,13 @@ jobs:
         tags: ${{ env.HEROKU_APP_NAME }}/backend:staging
         outputs: type=docker,dest=/tmp/backend.tar
 
-    #- name: build nginx image
-    #  uses: docker/build-push-action@v2
-    #  with:
-    #    context: nginx
-    #    file: nginx/Dockerfile
-    #    tags: ${{ env.HEROKU_APP_NAME }}/nginx:staging
-    #    outputs: type=docker,dest=/tmp/nginx.tar
+    - name: build server image
+      uses: docker/build-push-action@v2
+      with:
+        context: server
+        file: server/Dockerfile
+        tags: ${{ env.HEROKU_APP_NAME }}/server:staging
+        outputs: type=docker,dest=/tmp/server.tar
 
     - name: upload backend artifact
       uses: actions/upload-artifact@v2
@@ -42,11 +42,11 @@ jobs:
         name: backend_staging
         path: /tmp/backend.tar
 
-    #- name: upload nginx artifact
-    #  uses: actions/upload-artifact@v2
-    #  with:
-    #    name: nginx_staging
-    #    path: /tmp/nginx.tar
+    - name: upload server artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: server_staging
+        path: /tmp/server.tar
 
   validate:
     runs-on: ubuntu-latest
@@ -100,23 +100,22 @@ jobs:
         name: backend_staging
         path: /tmp
 
-    #- name: download nginx artifact
-    #  uses: actions/download-artifact@v2
-    #  with:
-    #    name: nginx_staging
-    #    path: /tmp
+    - name: download server artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: server_staging
+        path: /tmp
     
-    - name: load backend and nginx images
+    - name: load backend and server images
       run: |
         docker load --input /tmp/backend.tar
-        #docker load --input /tmp/nginx.tar
+        docker load --input /tmp/server.tar
         docker image ls
 
     - name: tag images for heroku
       run: |
-        docker tag ${{ env.HEROKU_APP_NAME }}/backend:staging ${{ env.HEROKU_REGISTRY }}/${{ env.HEROKU_APP_NAME }}/web:latest
-        #docker tag ${{ env.HEROKU_APP_NAME }}/backend:staging ${{ env.HEROKU_REGISTRY }}/${{ env.HEROKU_APP_NAME }}/worker:latest
-        #docker tag ${{ env.HEROKU_APP_NAME }}/nginx:staging ${{ env.HEROKU_REGISTRY }}/${{ env.HEROKU_APP_NAME }}/web:latest
+        docker tag ${{ env.HEROKU_APP_NAME }}/backend:staging ${{ env.HEROKU_REGISTRY }}/${{ env.HEROKU_APP_NAME }}/worker:latest
+        docker tag ${{ env.HEROKU_APP_NAME }}/server:staging ${{ env.HEROKU_REGISTRY }}/${{ env.HEROKU_APP_NAME }}/web:latest
         docker image ls
 
     - name: login heroku registry
@@ -124,13 +123,24 @@ jobs:
 
     - name: push images to heroku registry
       run: |
-        #docker image push ${{ env.HEROKU_REGISTRY }}/${{ env.HEROKU_APP_NAME }}/worker:latest
+        docker image push ${{ env.HEROKU_REGISTRY }}/${{ env.HEROKU_APP_NAME }}/worker:latest
         docker image push ${{ env.HEROKU_REGISTRY }}/${{ env.HEROKU_APP_NAME }}/web:latest
 
     - name: deploy images to the application
       run: |
-        #HEROKU_API_KEY=${{ secrets.HEROKU_API_KEY }} heroku container:release web worker -a ${{ env.HEROKU_APP_NAME }}
-        HEROKU_API_KEY=${{ secrets.HEROKU_API_KEY }} heroku container:release web -a ${{ env.HEROKU_APP_NAME }}
+        HEROKU_API_KEY=${{ secrets.HEROKU_API_KEY }} heroku container:release web worker -a ${{ env.HEROKU_APP_NAME }}
+
+    - name: deploy heroku.yml file
+      run: |
+        if [ -d /tmp/${{ env.HEROKU_APP_NAME }} ]; then rm -rf /tmp/${{ env.HEROKU_APP_NAME }}; fi
+        mkdir -p /tmp/${{ env.HEROKU_APP_NAME }}
+        cp heroku.yml /tmp/${{ env.HEROKU_APP_NAME }}
+        cd /tmp/${{ env.HEROKU_APP_NAME }}
+        git init
+        heroku git:remote -a ${{ env.HEROKU_APP_NAME }}
+        git add heroku.yml
+        git commit -m "deploy with heroku.yml"
+        git push -f heroku master
 
     - name: always logout from heroku registry and never complain
       run: docker logout ${{ env.HEROKU_REGISTRY }}
