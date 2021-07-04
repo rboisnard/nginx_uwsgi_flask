@@ -91,6 +91,9 @@ jobs:
     env:
       HEROKU_REGISTRY: registry.heroku.com
     steps:
+    - name: checkout
+      uses: actions/checkout@v2
+
     - name: setup docker buildx
       uses: docker/setup-buildx-action@v1
 
