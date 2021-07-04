@@ -1,0 +1,21 @@
+---
+version: "3.7"
+services:
+  worker:
+    build: ../backend
+    container_name: worker
+    environment:
+      PORT: 5555
+    expose:
+    - 5555
+  web:
+    build: ../server
+    container_name: web
+    depends_on:
+    - worker
+    environment:
+      PORT: 5554
+      BACKEND: worker:5555
+      SERVER: localhost
+    ports:
+    - 80:5554

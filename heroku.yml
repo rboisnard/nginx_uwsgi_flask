@@ -1,0 +1,6 @@
+---
+run:
+  web:
+    image: registry.heroku.com/nginx-uwsgi-flask/web:latest
+  worker:
+    image: registry.heroku.com/nginx-uwsgi-flask/worker:latest
