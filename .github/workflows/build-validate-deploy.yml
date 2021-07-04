@@ -140,6 +140,8 @@ jobs:
         cp heroku.yml /tmp/${{ env.HEROKU_APP_NAME }}
         cd /tmp/${{ env.HEROKU_APP_NAME }}
         git init
+        git config --local user.email 50302773+rboisnard@users.noreply.github.com
+        git config --local user.name rboisnard
         heroku git:remote -a ${{ env.HEROKU_APP_NAME }}
         git add heroku.yml
         git commit -m "deploy with heroku.yml"
