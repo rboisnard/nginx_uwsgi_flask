@@ -10,7 +10,7 @@ if [ -z $SERVER ]; then
 fi
 
 if [ -z $BACKEND ]; then
-  BACKEND=worker:5555
+  BACKEND=uwsgi-flask.herokuapp.com
 fi
 
 sed -i -e "s/%PORT%/$PORT/" /etc/nginx/conf.d/default.conf
