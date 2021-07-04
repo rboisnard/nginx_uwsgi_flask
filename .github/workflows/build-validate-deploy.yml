@@ -142,10 +142,23 @@ jobs:
         git init
         git config --local user.email 50302773+rboisnard@users.noreply.github.com
         git config --local user.name rboisnard
-        heroku git:remote -a ${{ env.HEROKU_APP_NAME }}
         git add heroku.yml
         git commit -m "deploy with heroku.yml"
-        git push -f heroku master
+
+    - name: add heroku remote
+      run: |
+        cd /tmp/${{ env.HEROKU_APP_NAME }}
+        HEROKU_API_KEY=${{ secrets.HEROKU_API_KEY }} heroku git:remote -a ${{ env.HEROKU_APP_NAME }}
+
+    - name: show remotes
+      run: |
+        cd /tmp/${{ env.HEROKU_APP_NAME }}
+        git remote -v
+
+    - name: push to heroku
+      run: |
+        cd /tmp/${{ env.HEROKU_APP_NAME }}
+        HEROKU_API_KEY=${{ secrets.HEROKU_API_KEY }} heroku git:push -a ${{ env.HEROKU_APP_NAME }} -f heroku master
 
     - name: always logout from heroku registry and never complain
       run: docker logout ${{ env.HEROKU_REGISTRY }}
